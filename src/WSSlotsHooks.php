@@ -172,8 +172,14 @@ class WSSlotsHooks implements
 			}
 
 			if ( method_exists( $mwServices, 'getContentRenderer' ) ) {
-				$parserOutput = $mwServices->getContentRenderer()->getParserOutput( $content, $subjectTitle, $revision->getId() );
+				if ( version_compare( MW_VERSION, '1.42', '>=' ) ) {
+					$parserOutput = $mwServices->getContentRenderer()->getParserOutput( $content, $subjectTitle, $revision );
+				} else {
+					// MW 1.39-1.42
+					$parserOutput = $mwServices->getContentRenderer()->getParserOutput( $content, $subjectTitle, $revision->getId() );
+				}
 			} else {
+				// MW 1.35-1.38
 				$parserOutput = $content->getParserOutput( $subjectTitle, $revision->getId() );
 			}
 
