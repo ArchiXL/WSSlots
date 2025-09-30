@@ -10,6 +10,7 @@ use MWContentSerializationException;
 use MWException;
 use Wikimedia\ParamValidator\ParamValidator;
 use WSSlots\Logger;
+use WSSlots\SlotEditOptions;
 use WSSlots\WSSlots;
 
 /**
@@ -48,19 +49,22 @@ class ApiEditSlots extends ApiBase {
 			}
 		}
 
-		$result = WSSlots::editSlots(
+        $options = new SlotEditOptions();
+        $options->summary = $params["summary"];
+        $options->append = $params["append"];
+        $options->watchlist = $params["watchlist"];
+        $options->prepend = $params["prepend"];
+        $options->bot = $params["bot"];
+        $options->minor = $params["minor"];
+        $options->createonly = $params["createonly"];
+        $options->nocreate = $params["nocreate"];
+        $options->suppress = $params["suppress"];
+
+		$result = WSSlots::performSlotEdits(
 			$user,
 			$wikiPage,
 			$slotUpdates,
-			$params["summary"],
-			$params["append"],
-			$params["watchlist"],
-			$params["prepend"],
-			$params["bot"],
-			$params["minor"],
-			$params["createonly"],
-			$params["nocreate"],
-			$params["suppress"]
+            $options
 		);
 
 		if ( $result !== true ) {
