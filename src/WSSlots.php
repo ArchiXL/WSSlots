@@ -2,6 +2,7 @@
 
 namespace WSSlots;
 
+use ChangeTags;
 use CommentStoreComment;
 use Content;
 use ContentHandler;
@@ -173,6 +174,18 @@ class WSSlots {
             $pageUpdater->setContent( SlotRecord::MAIN, $main_content );
         }
 
+        // Add custom tags
+        if ( !empty( $options->tags ) ) {
+            $tagStatus = ChangeTags::canAddTagsAccompanyingChange( $options->tags, $user );
+
+            if ( !$tagStatus->isOK() ) {
+                $logger->alert( $tagStatus->getMessage()->text() );
+                return [ $tagStatus->getMessage() ];
+            }
+
+            $pageUpdater->addTags( $options->tags );
+        }
+
         $flags = EDIT_INTERNAL;
         $comment = CommentStoreComment::newUnsavedComment( $options->summary );
 
@@ -240,7 +253,7 @@ class WSSlots {
 	 * @param bool $createonly Don't edit the page if it exists already.
 	 * @param bool $nocreate Don't create the page if it doesn't exist already.
 	 * @param bool $suppress Whether to suppress the edit in recent changes.
-	 *
+     * @param string[] $tags Change tags to apply to the revision.
 	 * @return true|array True on success, or an error message with an error code otherwise
 	 *
 	 * @throws \MWContentSerializationException Should not happen
@@ -262,7 +275,8 @@ class WSSlots {
 		bool $minor = false,
 		bool $createonly = false,
 		bool $nocreate = false,
-		bool $suppress = false
+		bool $suppress = false,
+        array $tags = [],
 	) {
 		return self::editSlots(
 			$user,
@@ -276,7 +290,8 @@ class WSSlots {
 			$minor,
 			$createonly,
 			$nocreate,
-			$suppress
+			$suppress,
+            $tags,
 		);
 	}
 
@@ -294,7 +309,8 @@ class WSSlots {
 	 * @param bool $minor Whether this edit should be marked as minor.
 	 * @param bool $createonly Don't edit the page if it exists already.
 	 * @param bool $nocreate Don't create the page if it doesn't exist already.
-	 * @param bool $suppress Whether to suppress the edit in recent changes.
+	 * @param bool $suppress Whether to suppress the edit in recent changes.\
+     * @param string[] $tags Change tags to apply to the revision.
 	 *
 	 * @return true|array True on success, or an error message with an error code otherwise.
 	 *
@@ -316,7 +332,8 @@ class WSSlots {
 		bool $minor = false,
 		bool $createonly = false,
 		bool $nocreate = false,
-		bool $suppress = false
+		bool $suppress = false,
+        array $tags = [],
 	) {
         $options = new SlotEditOptions();
         $options->summary = $summary;
@@ -328,6 +345,7 @@ class WSSlots {
         $options->createonly = $createonly;
         $options->nocreate = $nocreate;
         $options->suppress = $suppress;
+        $options->tags = $tags;
 
         return self::performSlotEdits( $user, $wikiPage, $slotUpdates, $options );
 	}

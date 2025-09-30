@@ -48,6 +48,7 @@ class ApiEditSlot extends ApiBase {
         $options->createonly = $params["createonly"];
         $options->nocreate = $params["nocreate"];
         $options->suppress = $params["suppress"];
+        $options->tags = $params["tags"];
 
 		$result = WSSlots::performSlotEdit(
 			$user,
@@ -140,7 +141,12 @@ class ApiEditSlot extends ApiBase {
 			'suppress' => [
 				ParamValidator::PARAM_TYPE => 'boolean',
 				ParamValidator::PARAM_DEFAULT => false
-			]
+			],
+            'tags' => [
+                ParamValidator::PARAM_TYPE => 'tags',
+                ParamValidator::PARAM_ISMULTI => true,
+                ParamValidator::PARAM_DEFAULT => [],
+            ],
 		];
 	}
 
