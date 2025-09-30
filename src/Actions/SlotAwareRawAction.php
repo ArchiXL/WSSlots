@@ -15,36 +15,58 @@ use TextContent;
  * @ingroup Actions
  */
 class SlotAwareRawAction extends RawAction {
-    public function __construct(
-        $article,
-        $context
-    ) {
-        $mediaWikiServices = MediaWikiServices::getInstance();
+	public function __construct(
+		$article,
+		$context
+	) {
+		$mediaWikiServices = MediaWikiServices::getInstance();
 
-        $parser = $mediaWikiServices->getParser();
-        $permissionManager = $mediaWikiServices->getPermissionManager();
-        $revisionLookup = $mediaWikiServices->getRevisionLookup();
+		$parser = $mediaWikiServices->getParser();
+		$permissionManager = $mediaWikiServices->getPermissionManager();
+		$revisionLookup = $mediaWikiServices->getRevisionLookup();
+		$hookContainer = $mediaWikiServices->getHookContainer();
 
-        if ( method_exists( $mediaWikiServices, 'getRestrictionStore' ) ) {
-            $restrictionStore = $mediaWikiServices->getRestrictionStore();
-        } else {
-            $restrictionStore = null;
-        }
+		if ( method_exists( $mediaWikiServices, 'getRestrictionStore' ) ) {
+			$restrictionStore = $mediaWikiServices->getRestrictionStore();
+		} else {
+			$restrictionStore = null;
+		}
 
-        $userFactory = $mediaWikiServices->getUserFactory();
+		if( version_compare( MW_VERSION, '1.42', '>=' ) ) {
+			$userFactory = $mediaWikiServices->getUserFactory();
+			parent::__construct(
+				$article,
+				$context,
+				$parser,
+				$permissionManager,
+				$revisionLookup,
+				$restrictionStore,
+				$userFactory
+			);
+		} elseif ( version_compare( MW_VERSION, '1.40', '>=' ) ) {
+			parent::__construct(
+				$article,
+				$context,
+				$parser,
+				$permissionManager,
+				$revisionLookup,
+				$restrictionStore
+			);
+		} else {
+			$hookContainer = $mediaWikiServices->getHookContainer();
+			parent::__construct(
+				$article,
+				$context,
+				$hookContainer,
+				$parser,
+				$permissionManager,
+				$revisionLookup,
+				$restrictionStore
+			);
+		}
+	}
 
-        parent::__construct(
-            $article,
-            $context,
-            $parser,
-            $permissionManager,
-            $revisionLookup,
-            $restrictionStore,
-            $userFactory
-        );
-    }
-
-    public function getName() {
+	public function getName() {
 		return 'rawslot';
 	}
 
