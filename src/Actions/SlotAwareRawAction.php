@@ -52,7 +52,7 @@ class SlotAwareRawAction extends RawAction {
 				$revisionLookup,
 				$restrictionStore
 			);
-		} elseif ( version_compare( MW_VERSION, '1.39', '>=' ) ) {
+		} else {
 			$hookContainer = $mediaWikiServices->getHookContainer();
 			parent::__construct(
 				$article,
