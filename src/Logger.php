@@ -31,7 +31,7 @@ use Psr\Log\LoggerInterface;
  */
 class Logger {
 	// The logging channel for this extension
-	const LOGGING_CHANNEL = 'wsslots';
+	public const LOGGING_CHANNEL = 'wsslots';
 
 	/**
 	 * @var LoggerInterface An instance of a logger

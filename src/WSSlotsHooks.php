@@ -134,8 +134,8 @@ class WSSlotsHooks implements
 		$semanticSlots = RequestContext::getMain()->getConfig()->get( 'WSSlotsSemanticSlots' );
 
 		try {
-			
-			if ( method_exists( MediaWikiServices::class, 'getWikiPageFactory' ) ) { 
+
+			if ( method_exists( MediaWikiServices::class, 'getWikiPageFactory' ) ) {
 				$wikiPage = MediaWikiServices::getInstance()
 					->getWikiPageFactory()
 					->newFromTitle( $subjectTitle );
@@ -173,10 +173,18 @@ class WSSlotsHooks implements
 
 			if ( method_exists( $mwServices, 'getContentRenderer' ) ) {
 				if ( version_compare( MW_VERSION, '1.42', '>=' ) ) {
-					$parserOutput = $mwServices->getContentRenderer()->getParserOutput( $content, $subjectTitle, $revision );
+					$parserOutput = $mwServices->getContentRenderer()->getParserOutput(
+						$content,
+						$subjectTitle,
+						$revision
+					);
 				} else {
 					// MW 1.39-1.42
-					$parserOutput = $mwServices->getContentRenderer()->getParserOutput( $content, $subjectTitle, $revision->getId() );
+					$parserOutput = $mwServices->getContentRenderer()->getParserOutput(
+						$content,
+						$subjectTitle,
+						$revision->getId()
+					);
 				}
 			} else {
 				// MW 1.35-1.38
@@ -192,14 +200,16 @@ class WSSlotsHooks implements
 
 			if ( !$semanticData->getSubject()->equals( $slotSemanticData->getSubject() ) ) {
 				// This would throw an exception in "importDataFrom" otherwise
-				// TODO: Figure out the root cause of why the subject of a slot does not equal the subject of the main slot
+				// TODO: Figure out the root cause of why the subject of a slot does not equal
+				//       the subject of the main slot
 				continue;
 			}
 
-			// Remove any pre-defined properties that exist in both the main semantic data as well as the slot semantic
-			// data from the main semantic data to prevent them from merging
-			// Except for DIContainers, because these _should_ be merged; the subsemanticdata is saved anyway, so deleting their
-			// relation to the semantic data is a bad idea.
+			// Remove any pre-defined properties that exist in both the main semantic data as
+			// well as the slot semantic data from the main semantic data to prevent them from
+			// merging
+			// Except for DIContainers, because these _should_ be merged; the subsemanticdata is
+			// saved anyway, so deleting their relation to the semantic data is a bad idea.
 			foreach ( $slotSemanticData->getProperties() as $property ) {
 				if (
 					!( $property instanceof DIContainer )

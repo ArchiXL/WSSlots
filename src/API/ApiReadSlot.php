@@ -33,11 +33,18 @@ class ApiReadSlot extends ApiBase {
 		$content = WSSlots::getSlotContent( $wikiPage, $params["slot"] );
 
 		if ( $content === null ) {
-			$this->dieWithError( wfMessage( "wsslots-apierror-slotdoesnotexist", $params['slot'], $title->getFullText() ), "slotdoesnotexist" );
+			$this->dieWithError(
+				$this->msg(
+					"wsslots-apierror-slotdoesnotexist",
+					$params['slot'],
+					$title->getFullText()
+				),
+				"slotdoesnotexist"
+			);
 		}
 
 		if ( !$content instanceof TextContent ) {
-			$this->dieWithError( wfMessage( "wsslots-apierror-nottext", $content->getModel() ), "nottext" );
+			$this->dieWithError( $this->msg( "wsslots-apierror-nottext", $content->getModel() ), "nottext" );
 		}
 
 		$this->getResult()->addValue( null, 'result', $content->getText() );

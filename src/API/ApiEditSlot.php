@@ -38,32 +38,33 @@ class ApiEditSlot extends ApiBase {
 			[ 'autoblock' => true ]
 		);
 
-        $options = new SlotEditOptions();
-        $options->summary = $params["summary"];
-        $options->append = $params["append"];
-        $options->watchlist = $params["watchlist"];
-        $options->prepend = $params["prepend"];
-        $options->bot = $params["bot"];
-        $options->minor = $params["minor"];
-        $options->createonly = $params["createonly"];
-        $options->nocreate = $params["nocreate"];
-        $options->suppress = $params["suppress"];
-        $options->tags = $params["tags"];
+		$options = new SlotEditOptions();
+		$options->summary = $params["summary"];
+		$options->append = $params["append"];
+		$options->watchlist = $params["watchlist"];
+		$options->prepend = $params["prepend"];
+		$options->bot = $params["bot"];
+		$options->minor = $params["minor"];
+		$options->createonly = $params["createonly"];
+		$options->nocreate = $params["nocreate"];
+		$options->suppress = $params["suppress"];
+		$options->tags = $params["tags"];
 
 		$result = WSSlots::performSlotEdit(
 			$user,
 			$wikiPage,
 			$params["text"] ?? "",
 			$params["slot"],
-            $options
+			$options
 		);
 
 		if ( $result !== true ) {
 			[ $message, $code ] = $result;
 
-			Logger::getLogger()->alert( 'Editing slot failed while performing edit through the "editslot" API: {message}', [
-				'message' => $message
-			] );
+			Logger::getLogger()->alert(
+				'Editing slot failed while performing edit through the "editslot" API: {message}',
+				[ 'message' => $message ]
+			);
 
 			$this->dieWithError( $message, $code );
 		}
@@ -142,11 +143,11 @@ class ApiEditSlot extends ApiBase {
 				ParamValidator::PARAM_TYPE => 'boolean',
 				ParamValidator::PARAM_DEFAULT => false
 			],
-            'tags' => [
-                ParamValidator::PARAM_TYPE => 'tags',
-                ParamValidator::PARAM_ISMULTI => true,
-                ParamValidator::PARAM_DEFAULT => [],
-            ],
+			'tags' => [
+				ParamValidator::PARAM_TYPE => 'tags',
+				ParamValidator::PARAM_ISMULTI => true,
+				ParamValidator::PARAM_DEFAULT => [],
+			],
 		];
 	}
 

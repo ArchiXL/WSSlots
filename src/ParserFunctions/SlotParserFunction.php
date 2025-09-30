@@ -26,7 +26,7 @@ class SlotParserFunction {
 	 * @return string|array
 	 * @throws MWException
 	 */
-	public function execute( Parser $parser, string $slotName, string $pageName = null, string $parse = null ) {
+	public function execute( Parser $parser, string $slotName, ?string $pageName = null, ?string $parse = null ) {
 		if ( !$pageName ) {
 			return '';
 		}
