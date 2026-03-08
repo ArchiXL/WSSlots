@@ -197,15 +197,13 @@ class WSSlotsHooks implements
 			}
 
 			foreach ( $slotSemanticData->getProperties() as $property ) {
-                // Remove any pre-defined properties from the main semantic data
-				if ( !( $property instanceof SMWDIContainer ) && !$property->isUserDefined() ) {
+                if ( $property->getKey() === '_SKEY' ) {
+					// Remove the sortkey from the slot semantic data
+                    $slotSemanticData->removeProperty( $property );
+                } elseif ( !( $property instanceof SMWDIContainer ) && !$property->isUserDefined() ) {
+					// Remove any other pre-defined properties from the main semantic data
 					$semanticData->removeProperty( $property );
 				}
-
-                // Remove the sortkey from the slot semantic data
-                if ( $property->getKey() === '_SKEY' ) {
-                    $slotSemanticData->removeProperty( $property );
-                }
 			}
 
 			$semanticData->importDataFrom( $slotSemanticData );
