@@ -79,7 +79,7 @@ The extension provides the `#slotdata` parser function to get structured content
 
 * `<slotname>`: The name of the slot to get the data from.
 * `<pagename>` (optional, default: `{{FULLPAGENAME}}` ): The name of the page to get the data from.
-* `<key>` (optional, default: ``): The key of the value to return (dot-separated list of indices).
+* `<key>` (optional, default: ``): The key of the value to return. Use a JSONPath expression to traverse the path in your structure, regardless whether you are accessing JSON or wiki template content. Both dot and bracket styles of notation are acceptable. To retrieve the raw content of an element, add '_text' as the final node. For instance, if your wiki page uses a single template called "Log" and you want to get the content of a template parameter "Hours spent today", you can request it with the following expression: `Log[0]["Hours spent today"]["_text"]`, or alternatively, `Log.0["Hours spent today"]._text`. 
 * `<search>` (optional, default: ``): The search to perform before looking for the key, should be of the form `key=value`. If the given key-value pair is not unique, the first enclosing block that contains that pair will be used.
 * `<compat>` (optional, default: false): Whether to return the result in a manner that [ArrayFunctions](https://www.mediawiki.org/wiki/Extension:ArrayFunctions) understands. Requires ArrayFunctions to be installed and enabled.
 
