@@ -15,7 +15,7 @@ trait UserCanTrait {
 	 * @param User|null $user
 	 * @return bool
 	 */
-	private function userCan( WikiPage $wikiPage, User $user = null ): bool {
+	private function userCan( WikiPage $wikiPage, ?User $user = null ): bool {
 		// Only do a check for user rights when not in CLI mode
 		if ( PHP_SAPI === 'cli' ) {
 			return true;

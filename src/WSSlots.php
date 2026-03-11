@@ -2,6 +2,7 @@
 
 namespace WSSlots;
 
+use ChangeTags;
 use CommentStoreComment;
 use Content;
 use ContentHandler;
@@ -23,92 +24,48 @@ use WikiPage;
  */
 class WSSlots {
 	/**
-	 * @param User $user The user that performs the edit
-	 * @param WikiPage $wikiPage The page to edit
-	 * @param string $text The text to insert/append
-	 * @param string $slotName The slot to edit
-	 * @param string $summary The summary to use
-	 * @param bool $append Whether to append to or replace the current text
-	 * @param string $watchlist Unconditionally add (watch) or remove (unwatch) the page from the current user's
-	 *                           watchlist, use preferences (preferences), or do not change watch (nochange, default).
-	 *                           Must be one of the following values: watch, unwatch, preferences, nochange.
-	 * @param bool $prepend Whether to prepend to the current text.
-	 * @param bool $bot Whether this edit should be marked as a bot edit
-	 * @param bool $minor Whether this edit should be marked as minor
-	 * @param bool $createonly Don't edit the page if it exists already.
-	 * @param bool $nocreate Don't create the page if it doesn't exist already.
-	 * @param bool $suppress Whether to suppress the edit in recent changes.
-	 *
-	 * @return true|array True on success, or an error message with an error code otherwise
-	 *
-	 * @throws \MWContentSerializationException Should not happen
-	 * @throws MWException Should not happen
-	 */
-	final public static function editSlot(
-		User $user,
-		WikiPage $wikiPage,
-		string $text,
-		string $slotName,
-		string $summary,
-		bool $append = false,
-		string $watchlist = "nochange",
-		bool $prepend = false,
-		bool $bot = false,
-		bool $minor = false,
-		bool $createonly = false,
-		bool $nocreate = false,
-		bool $suppress = false
-	) {
-		return self::editSlots(
-			$user,
-			$wikiPage,
-			[ $slotName => $text ],
-			$summary,
-			$append,
-			$watchlist,
-			$prepend,
-			$bot,
-			$minor,
-			$createonly,
-			$nocreate,
-			$suppress
-		);
-	}
-
-	/**
 	 * @param User $user The user that performs the edit.
 	 * @param WikiPage $wikiPage The page to edit.
-	 * @param array $slotUpdates Associative array with slotName as key, text as value.
-	 * @param string $summary The summary to use.
-	 * @param bool $append Whether to append to the current text.
-	 * @param string $watchlist Unconditionally add (watch) or remove (unwatch) the page from the current user's
-	 *                          watchlist, use preferences (preferences), or do not change watch (nochange, default).
-	 *                          Must be one of the following values: watch, unwatch, preferences, nochange.
-	 * @param bool $prepend Whether to prepend to the current text.
-	 * @param bool $bot Whether this edit should be marked as a bot edit.
-	 * @param bool $minor Whether this edit should be marked as minor.
-	 * @param bool $createonly Don't edit the page if it exists already.
-	 * @param bool $nocreate Don't create the page if it doesn't exist already.
-	 * @param bool $suppress Whether to suppress the edit in recent changes.
+	 * @param string $text The text to insert/append.
+	 * @param string $slotName The slot to edit.
+	 * @param SlotEditOptions $options The options to use.
 	 *
 	 * @return true|array True on success, or an error message with an error code otherwise.
 	 *
 	 * @throws \MWContentSerializationException Should not happen
 	 * @throws MWException Should not happen
 	 */
-	final public static function editSlots(
+	final public static function performSlotEdit(
 		User $user,
 		WikiPage $wikiPage,
-		array $slotUpdates,
-		string $summary = '',
-		bool $append = false,
-		string $watchlist = "",
-		bool $prepend = false,
-		bool $bot = false,
-		bool $minor = false,
-		bool $createonly = false,
-		bool $nocreate = false,
-		bool $suppress = false
+		string $text,
+		string $slotName,
+		SlotEditOptions $options,
+	) {
+		return self::performSlotEdits(
+			$user,
+			$wikiPage,
+			[ $slotName => $text ],
+			$options
+		);
+	}
+
+	/**
+	 * @param User $user The user that performs the edit.
+	 * @param WikiPage $wikiPage The page to edit.
+	 * @param array $updates Associative array with slotName as key, text as value.
+	 * @param SlotEditOptions $options The options to use.
+	 *
+	 * @return true|array True on success, or an error message with an error code otherwise.
+	 *
+	 * @throws \MWContentSerializationException Should not happen
+	 * @throws MWException Should not happen
+	 */
+	final public static function performSlotEdits(
+		User $user,
+		WikiPage $wikiPage,
+		array $updates,
+		SlotEditOptions $options,
 	) {
 		$logger = Logger::getLogger();
 
@@ -122,11 +79,14 @@ class WSSlots {
 			return [ wfMessage( "wsslots-error-invalid-wikipage-object" ) ];
 		}
 
-		if ( $titleObject->exists() && $createonly || !$titleObject->exists() && $nocreate ) {
+		if (
+			( $titleObject->exists() && $options->createonly )
+			|| ( !$titleObject->exists() && $options->nocreate )
+		) {
 			return true;
 		}
 
-		foreach ( $slotUpdates as $slotName => $text ) {
+		foreach ( $updates as $slotName => $text ) {
 			$logger->debug( 'Editing slot {slotName} on page {page}', [
 				'slotName' => $slotName,
 				'page' => $titleObject->getFullText()
@@ -143,7 +103,7 @@ class WSSlots {
 			}
 
 			// Alter $text when the $append or $prepend (or both) is true
-			if ( $append || $prepend ) {
+			if ( $options->append || $options->prepend ) {
 				// We want to append the given text to the current page, instead of replacing the content
 				$content = self::getSlotContent( $wikiPage, $slotName );
 
@@ -152,22 +112,26 @@ class WSSlots {
 						$slotContentHandler = $content->getContentHandler();
 						$modelId = $slotContentHandler->getModelID();
 
-						$logger->alert( 'Tried to append/prepend to slot {slotName} with non-textual content model {modelId} while editing page {page}', [
-							'slotName' => $slotName,
-							'modelId' => $modelId,
-							'page' => $titleObject->getFullText()
-						] );
+						$logger->alert(
+							'Tried to append/prepend to slot {slotName} with non-textual ' .
+							'content model {modelId} while editing page {page}',
+							[
+								'slotName' => $slotName,
+								'modelId' => $modelId,
+								'page' => $titleObject->getFullText()
+							]
+						);
 
 						return [ wfMessage( "apierror-appendnotsupported" ), $modelId ];
 					}
 
 					$contentText = $content->serialize();
 
-					if ( $append ) {
+					if ( $options->append ) {
 						$contentText = $contentText . $text;
 					}
 
-					if ( $prepend ) {
+					if ( $options->prepend ) {
 						$contentText = $text . $contentText;
 					}
 
@@ -217,18 +181,30 @@ class WSSlots {
 			$pageUpdater->setContent( SlotRecord::MAIN, $main_content );
 		}
 
-		$flags = EDIT_INTERNAL;
-		$comment = CommentStoreComment::newUnsavedComment( $summary );
+		// Add custom tags
+		if ( !empty( $options->tags ) ) {
+			$tagStatus = ChangeTags::canAddTagsAccompanyingChange( $options->tags, $user );
 
-		if ( $bot ) {
+			if ( !$tagStatus->isOK() ) {
+				$logger->alert( $tagStatus->getMessage()->text() );
+				return [ $tagStatus->getMessage() ];
+			}
+
+			$pageUpdater->addTags( $options->tags );
+		}
+
+		$flags = EDIT_INTERNAL;
+		$comment = CommentStoreComment::newUnsavedComment( $options->summary );
+
+		if ( $options->bot ) {
 			$flags |= EDIT_FORCE_BOT;
 		}
 
-		if ( $minor ) {
+		if ( $options->minor ) {
 			$flags |= EDIT_MINOR;
 		}
 
-		if ( $suppress ) {
+		if ( $options->suppress ) {
 			$flags |= EDIT_SUPPRESS_RC;
 		}
 
@@ -237,7 +213,7 @@ class WSSlots {
 		$logger->debug( 'Finished calling saveRevision on PageUpdater' );
 
 		// Add the page to the watchlist
-		$watch = self::getWatchlistValue( $watchlist, $titleObject, $user );
+		$watch = self::getWatchlistValue( $options->watchlist, $titleObject, $user );
 		if ( method_exists( MediaWikiServices::class, 'getWatchlistManager' ) ) {
 			// >1.37
 			MediaWikiServices::getInstance()->getWatchlistManager()->setWatch( $watch, $user, $titleObject );
@@ -254,7 +230,10 @@ class WSSlots {
 			$user->invalidateCache();
 		}
 
-		if ( !$pageUpdater->isUnchanged() && MediaWikiServices::getInstance()->getMainConfig()->get( "WSSlotsDoPurge" ) ) {
+		if (
+			!$pageUpdater->isUnchanged()
+			&& MediaWikiServices::getInstance()->getMainConfig()->get( "WSSlotsDoPurge" )
+		) {
 			$logger->debug( 'Refreshing data for page {page}', [
 				'page' => $titleObject->getFullText()
 			] );
@@ -266,6 +245,119 @@ class WSSlots {
 		}
 
 		return true;
+	}
+
+	/**
+	 * @param User $user The user that performs the edit
+	 * @param WikiPage $wikiPage The page to edit
+	 * @param string $text The text to insert/append
+	 * @param string $slotName The slot to edit
+	 * @param string $summary The summary to use
+	 * @param bool $append Whether to append to or replace the current text
+	 * @param string $watchlist Unconditionally add (watch) or remove (unwatch) the page from the current user's
+	 *                           watchlist, use preferences (preferences), or do not change watch (nochange, default).
+	 *                           Must be one of the following values: watch, unwatch, preferences, nochange.
+	 * @param bool $prepend Whether to prepend to the current text.
+	 * @param bool $bot Whether this edit should be marked as a bot edit
+	 * @param bool $minor Whether this edit should be marked as minor
+	 * @param bool $createonly Don't edit the page if it exists already.
+	 * @param bool $nocreate Don't create the page if it doesn't exist already.
+	 * @param bool $suppress Whether to suppress the edit in recent changes.
+	 * @param string[] $tags Change tags to apply to the revision.
+	 * @return true|array True on success, or an error message with an error code otherwise
+	 *
+	 * @throws \MWContentSerializationException Should not happen
+	 * @throws MWException Should not happen
+	 *
+	 * @deprecated Use WSSlots::performSlotEdit() instead
+	 * @see WSSlots::performSlotEdit()
+	 */
+	final public static function editSlot(
+		User $user,
+		WikiPage $wikiPage,
+		string $text,
+		string $slotName,
+		string $summary,
+		bool $append = false,
+		string $watchlist = "nochange",
+		bool $prepend = false,
+		bool $bot = false,
+		bool $minor = false,
+		bool $createonly = false,
+		bool $nocreate = false,
+		bool $suppress = false,
+		array $tags = [],
+	) {
+		return self::editSlots(
+			$user,
+			$wikiPage,
+			[ $slotName => $text ],
+			$summary,
+			$append,
+			$watchlist,
+			$prepend,
+			$bot,
+			$minor,
+			$createonly,
+			$nocreate,
+			$suppress,
+			$tags,
+		);
+	}
+
+	/**
+	 * @param User $user The user that performs the edit.
+	 * @param WikiPage $wikiPage The page to edit.
+	 * @param array $slotUpdates Associative array with slotName as key, text as value.
+	 * @param string $summary The summary to use.
+	 * @param bool $append Whether to append to the current text.
+	 * @param string $watchlist Unconditionally add (watch) or remove (unwatch) the page from the current user's
+	 *                          watchlist, use preferences (preferences), or do not change watch (nochange, default).
+	 *                          Must be one of the following values: watch, unwatch, preferences, nochange.
+	 * @param bool $prepend Whether to prepend to the current text.
+	 * @param bool $bot Whether this edit should be marked as a bot edit.
+	 * @param bool $minor Whether this edit should be marked as minor.
+	 * @param bool $createonly Don't edit the page if it exists already.
+	 * @param bool $nocreate Don't create the page if it doesn't exist already.
+	 * @param bool $suppress Whether to suppress the edit in recent changes.\
+	 * @param string[] $tags Change tags to apply to the revision.
+	 *
+	 * @return true|array True on success, or an error message with an error code otherwise.
+	 *
+	 * @throws \MWContentSerializationException Should not happen
+	 * @throws MWException Should not happen
+	 *
+	 * @deprecated Use WSSlots::performSlotEdits() instead
+	 * @see WSSlots::performSlotEdits()
+	 */
+	final public static function editSlots(
+		User $user,
+		WikiPage $wikiPage,
+		array $slotUpdates,
+		string $summary = '',
+		bool $append = false,
+		string $watchlist = "",
+		bool $prepend = false,
+		bool $bot = false,
+		bool $minor = false,
+		bool $createonly = false,
+		bool $nocreate = false,
+		bool $suppress = false,
+		array $tags = [],
+	) {
+		$options = new SlotEditOptions();
+		$options->summary = $summary;
+		$options->append = $append;
+		$options->watchlist = $watchlist;
+		$options->prepend = $prepend;
+		$options->bot = $bot;
+		$options->minor = $minor;
+		$options->createonly = $createonly;
+		$options->nocreate = $nocreate;
+		$options->suppress = $suppress;
+		$options->tags = $tags;
+
+		return self::performSlotEdits( $user, $wikiPage, $slotUpdates, $options );
 	}
 
 	/**
@@ -326,8 +418,8 @@ class WSSlots {
 					return false;
 				}
 				return $userOptionsLookup->getBoolOption( $user, 'watchdefault' ) ||
-					$userOptionsLookup->getBoolOption( $user, 'watchcreations' ) &&
-					!$title->exists();
+					( $userOptionsLookup->getBoolOption( $user, 'watchcreations' ) &&
+					!$title->exists() );
 
 			// case 'nochange':
 			default:

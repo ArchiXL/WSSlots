@@ -173,7 +173,7 @@ class ScribuntoLuaLibrary extends \Scribunto_LuaLibraryBase {
 	}
 
 	/**
-	 * @param $array
+	 * @param mixed $array
 	 * @return mixed
 	 */
 	private function convertToLuaTable( $array ) {

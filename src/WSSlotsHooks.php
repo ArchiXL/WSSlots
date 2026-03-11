@@ -134,8 +134,8 @@ class WSSlotsHooks implements
 		$semanticSlots = RequestContext::getMain()->getConfig()->get( 'WSSlotsSemanticSlots' );
 
 		try {
-			
-			if ( method_exists( MediaWikiServices::class, 'getWikiPageFactory' ) ) { 
+
+			if ( method_exists( MediaWikiServices::class, 'getWikiPageFactory' ) ) {
 				$wikiPage = MediaWikiServices::getInstance()
 					->getWikiPageFactory()
 					->newFromTitle( $subjectTitle );
@@ -173,10 +173,18 @@ class WSSlotsHooks implements
 
 			if ( method_exists( $mwServices, 'getContentRenderer' ) ) {
 				if ( version_compare( MW_VERSION, '1.42', '>=' ) ) {
-					$parserOutput = $mwServices->getContentRenderer()->getParserOutput( $content, $subjectTitle, $revision );
+					$parserOutput = $mwServices->getContentRenderer()->getParserOutput(
+						$content,
+						$subjectTitle,
+						$revision
+					);
 				} else {
 					// MW 1.39-1.42
-					$parserOutput = $mwServices->getContentRenderer()->getParserOutput( $content, $subjectTitle, $revision->getId() );
+					$parserOutput = $mwServices->getContentRenderer()->getParserOutput(
+						$content,
+						$subjectTitle,
+						$revision->getId()
+					);
 				}
 			} else {
 				// MW 1.35-1.38
@@ -192,7 +200,8 @@ class WSSlotsHooks implements
 
 			if ( !$semanticData->getSubject()->equals( $slotSemanticData->getSubject() ) ) {
 				// This would throw an exception in "importDataFrom" otherwise
-				// TODO: Figure out the root cause of why the subject of a slot does not equal the subject of the main slot
+				// TODO: Figure out the root cause of why the subject of a slot does not equal
+				//       the subject of the main slot
 				continue;
 			}
 

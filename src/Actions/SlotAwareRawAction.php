@@ -15,6 +15,9 @@ use TextContent;
  * @ingroup Actions
  */
 class SlotAwareRawAction extends RawAction {
+	/**
+	 * @inheritDoc
+	 */
 	public function __construct(
 		$article,
 		$context
@@ -32,18 +35,18 @@ class SlotAwareRawAction extends RawAction {
 			$restrictionStore = null;
 		}
 
-		if( version_compare( MW_VERSION, '1.42', '>=' ) ) {
-			$userFactory = $mediaWikiServices->getUserFactory();
-			parent::__construct(
-				$article,
-				$context,
-				$parser,
-				$permissionManager,
-				$revisionLookup,
-				$restrictionStore,
-				$userFactory
-			);
-		} elseif ( version_compare( MW_VERSION, '1.40', '>=' ) ) {
+		if( version_compare( MW_VERSION, '1.42', '>=' ) ) {$userFactory = $mediaWikiServices->getUserFactory();
+
+		parent::__construct(
+			$article,
+			$context,
+			$parser,
+			$permissionManager,
+			$revisionLookup,
+			$restrictionStore,
+			$userFactory
+		);
+	}elseif ( version_compare( MW_VERSION, '1.40', '>=' ) ) {
 			parent::__construct(
 				$article,
 				$context,
@@ -66,6 +69,9 @@ class SlotAwareRawAction extends RawAction {
 		}
 	}
 
+	/**
+	 * @inheritDoc
+	 */
 	public function getName() {
 		return 'rawslot';
 	}

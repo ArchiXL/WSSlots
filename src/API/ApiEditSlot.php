@@ -9,6 +9,7 @@ use MWContentSerializationException;
 use MWException;
 use Wikimedia\ParamValidator\ParamValidator;
 use WSSlots\Logger;
+use WSSlots\SlotEditOptions;
 use WSSlots\WSSlots;
 
 /**
@@ -37,28 +38,33 @@ class ApiEditSlot extends ApiBase {
 			[ 'autoblock' => true ]
 		);
 
-		$result = WSSlots::editSlot(
+		$options = new SlotEditOptions();
+		$options->summary = $params["summary"];
+		$options->append = $params["append"];
+		$options->watchlist = $params["watchlist"];
+		$options->prepend = $params["prepend"];
+		$options->bot = $params["bot"];
+		$options->minor = $params["minor"];
+		$options->createonly = $params["createonly"];
+		$options->nocreate = $params["nocreate"];
+		$options->suppress = $params["suppress"];
+		$options->tags = $params["tags"];
+
+		$result = WSSlots::performSlotEdit(
 			$user,
 			$wikiPage,
 			$params["text"] ?? "",
 			$params["slot"],
-			$params["summary"],
-			$params["append"],
-			$params["watchlist"],
-			$params["prepend"],
-			$params["bot"],
-			$params["minor"],
-			$params["createonly"],
-			$params["nocreate"],
-			$params["suppress"]
+			$options
 		);
 
 		if ( $result !== true ) {
 			[ $message, $code ] = $result;
 
-			Logger::getLogger()->alert( 'Editing slot failed while performing edit through the "editslot" API: {message}', [
-				'message' => $message
-			] );
+			Logger::getLogger()->alert(
+				'Editing slot failed while performing edit through the "editslot" API: {message}',
+				[ 'message' => $message ]
+			);
 
 			$this->dieWithError( $message, $code );
 		}
@@ -136,7 +142,12 @@ class ApiEditSlot extends ApiBase {
 			'suppress' => [
 				ParamValidator::PARAM_TYPE => 'boolean',
 				ParamValidator::PARAM_DEFAULT => false
-			]
+			],
+			'tags' => [
+				ParamValidator::PARAM_TYPE => 'tags',
+				ParamValidator::PARAM_ISMULTI => true,
+				ParamValidator::PARAM_DEFAULT => [],
+			],
 		];
 	}
 

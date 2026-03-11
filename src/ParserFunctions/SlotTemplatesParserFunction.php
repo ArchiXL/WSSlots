@@ -36,9 +36,9 @@ class SlotTemplatesParserFunction {
 	public function execute(
 		Parser $parser,
 		string $slotName,
-		string $pageName = null,
-		string $arrayName = null,
-		string $recursive = null
+		?string $pageName = null,
+		?string $arrayName = null,
+		?string $recursive = null
 	): string {
 		if ( !class_exists( "\ComplexArray" ) ) {
 			return 'ComplexArrays is required for this functionality.';

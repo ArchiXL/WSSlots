@@ -34,7 +34,7 @@ trait WikiPageTrait {
 		if ( $title === null || !$title->exists() ) {
 			return null;
 		}
-		if ( method_exists( MediaWikiServices::class, 'getWikiPageFactory' ) ) { 
+		if ( method_exists( MediaWikiServices::class, 'getWikiPageFactory' ) ) {
 			return MediaWikiServices::getInstance()
 				->getWikiPageFactory()
 				->newFromTitle( $title );
